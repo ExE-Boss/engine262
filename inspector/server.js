@@ -74,6 +74,7 @@ wss.on('connection', (ws) => {
     // console.log('->', data);
     const { id, method, params } = JSON.parse(data);
     const [k, v] = method.split('.');
+    // TODO: This should probably use an optional chain:
     Promise.resolve(methods[k][v](params, context))
       .then((result = {}) => {
         send({ id, result });

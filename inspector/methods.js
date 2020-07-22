@@ -11,6 +11,7 @@ module.exports = {
     setAsyncCallStackDepth() {},
     setBlackboxPatterns() {},
     setPauseOnExceptions() {},
+    setInstrumentationBreakpoint() {},
   },
   Profiler: {
     enable() {},
@@ -22,7 +23,17 @@ module.exports = {
     },
     callFunctionOn(options) {
       const context = getContext(options.executionContextId);
-      const { Value: F } = context.realm.evaluateScript(`(${options.functionDeclaration})`);
+      let _evalResult = context.realm.evaluateScript(`(${options.functionDeclaration})`);
+      if (_evalResult instanceof engine262.AbruptCompletion) {
+        return context.createEvaluationResult(_evalResult, options);
+      }
+
+      if (_evalResult instanceof engine262.Completion) {
+        _evalResult = _evalResult.Value;
+      }
+
+      const F = _evalResult;
+
       const thisValue = options.objectId
         ? context.getObject(options.objectId)
         : engine262.Value.undefined;
@@ -84,6 +95,9 @@ module.exports = {
         names: [...names],
       };
     },
+    releaseObject({ objectId }) {
+      getContext().releaseObject(objectId);
+    },
     releaseObjectGroup({ objectGroup }) {
       getContext().releaseObjectGroup(objectGroup);
     },
@@ -97,6 +111,9 @@ module.exports = {
         },
       });
     },
+  },
+  Network: {
+    enable() {},
   },
   HeapProfiler: {
     enable() {},

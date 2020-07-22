@@ -24,6 +24,15 @@ class InspectorContext {
     return id;
   }
 
+  releaseObject(id) {
+    for (const [id2, object] of this.idToObject.entries()) {
+      if (id2 === id) {
+        this.idToObject.delete(id2);
+        this.objectToId.delete(object);
+      }
+    }
+  }
+
   releaseObjectGroup(group) {
     for (const [id, object] of this.idToObject.entries()) {
       if (id.startsWith(group)) {
