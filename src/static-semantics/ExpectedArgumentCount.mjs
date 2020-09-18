@@ -6,19 +6,17 @@ export function ExpectedArgumentCount(FormalParameterList) {
   }
 
   let count = 0;
-  for (const FormalParameter of FormalParameterList.slice(0, -1)) {
-    const BindingElement = FormalParameter;
+  const lastIndex = FormalParameterList.length - 1;
+  while (count < lastIndex) {
+    const BindingElement = FormalParameterList[count];
     if (HasInitializer(BindingElement)) {
       return count;
     }
     count += 1;
   }
 
-  const last = FormalParameterList[FormalParameterList.length - 1];
-  if (last.type === 'BindingRestElement') {
-    return count;
-  }
-  if (HasInitializer(last)) {
+  const last = FormalParameterList[lastIndex];
+  if (last.type === 'BindingRestElement' || HasInitializer(last)) {
     return count;
   }
   return count + 1;
