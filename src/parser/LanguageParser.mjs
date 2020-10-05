@@ -2,6 +2,21 @@ import { StatementParser } from './StatementParser.mjs';
 import { Token } from './tokens.mjs';
 
 export class LanguageParser extends StatementParser {
+  // REPLInput : Script[+Await]
+  parseREPLInput() {
+    if (!this.feature('repl-parse-goal')) {
+      throw new Error('REPL parse goal is not enabled.');
+    }
+    const node = this.startNode();
+    return this.scope.with({
+      await: true,
+    }, () => {
+      node.Script = this.parseScript();
+      node.hasTopLevelAwait = this.state.hasTopLevelAwait;
+      return this.finishNode(node, 'REPLInput');
+    });
+  }
+
   // Script : ScriptBody?
   parseScript() {
     if (this.feature('hashbang')) {

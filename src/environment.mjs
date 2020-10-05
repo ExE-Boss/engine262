@@ -869,6 +869,80 @@ export class ModuleEnvironmentRecord extends DeclarativeEnvironmentRecord {
   }
 }
 
+// https://github.com/bmeck/js-repl-goal#repl-environment-record
+export class REPLEnvironmentRecord extends DeclarativeEnvironmentRecord {
+  constructor(OuterEnv) {
+    Assert(surroundingAgent.feature('repl-parse-goal'));
+    Assert(OuterEnv instanceof EnvironmentRecord);
+    super();
+    this.OuterEnv = OuterEnv;
+  }
+
+  // https://github.com/bmeck/js-repl-goal#repl-environment-record
+  CreateMutableBinding(N) {
+    // 1. Let envRec be the REPL Environment Record for which the method was invoked.
+    const envRec = this;
+    // 2. If envRec does not already have a binding for N, then
+    if (!envRec.bindings.has(N)) {
+      // a. Create a mutable binding in envRec for N and record that it is uninitialized
+      //    and that it may be delted by a subsequent DeleteBinding call.
+      this.bindings.set(N, {
+        indirect: false,
+        initialized: false,
+        mutable: true,
+        strict: undefined,
+        deletable: true,
+        value: undefined,
+        mark(m) {
+          m(this.value);
+        },
+      });
+    }
+    //  3. Return NormalCompletion(empty).
+    return NormalCompletion(undefined);
+  }
+
+  // https://github.com/bmeck/js-repl-goal#repl-environment-record
+  CreateImmutableBinding(N, S) {
+    // 1. Let envRec be the REPL Environment Record for which the method was invoked.
+    const envRec = this;
+    // 2. If envRec does not already have a binding for N, then
+    if (!envRec.bindings.has(N)) {
+      // a. Create a mutable binding in envRec for N and record that it is uninitialized
+      //    and that it may be delted by a subsequent DeleteBinding call. If S is true,
+      //    record that the newly created binding is a strict binding.
+      this.bindings.set(N, {
+        indirect: false,
+        initialized: false,
+        mutable: true,
+        strict: S === Value.true,
+        deletable: true,
+        value: undefined,
+        mark(m) {
+          m(this.value);
+        },
+      });
+    }
+    // 3. Return NormalCompletion(empty).
+    return NormalCompletion(undefined);
+  }
+
+  // https://github.com/bmeck/js-repl-goal#repl-environment-record
+  InitializeBinding(N, V) {
+    // 1. Let envRec be the REPL Environment Record for which the method was invoked.
+    const envRec = this;
+    // 2. Assert: envRec must have a binding for N.
+    const binding = envRec.bindings.get(N);
+    Assert(binding !== undefined);
+    // 3. Set the bound value for N in envRec to V.
+    binding.value = V;
+    // 4. Record that the binding for N in envRec has been initialized.
+    binding.initialized = true;
+    // 5. Return NormalCompletion(empty).
+    return NormalCompletion(undefined);
+  }
+}
+
 // 8.1.2.1 #sec-getidentifierreference
 export function GetIdentifierReference(env, name, strict) {
   // 1. If lex is the value null, then

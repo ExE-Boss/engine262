@@ -7,14 +7,20 @@ import {
   Q, X,
 } from './completion.mjs';
 import {
+  AsyncBlockStart,
   IsCallable,
   Call, Construct, Assert, GetModuleNamespace,
   PerformPromiseThen, CreateBuiltinFunction,
   GetActiveScriptOrModule,
   CleanupFinalizationRegistry,
   CreateArrayFromList,
+  NewPromiseCapability,
 } from './abstract-ops/all.mjs';
-import { GlobalDeclarationInstantiation } from './runtime-semantics/all.mjs';
+import {
+  BlockDeclarationInstantiation,
+  GlobalDeclarationInstantiation,
+} from './runtime-semantics/all.mjs';
+import { REPLEnvironmentRecord } from './environment.mjs';
 import { Evaluate } from './evaluator.mjs';
 import { CyclicModuleRecord } from './modules.mjs';
 import { CallSite, unwind } from './helpers.mjs';
@@ -50,6 +56,11 @@ export const FEATURES = Object.freeze([
     name: 'item Method',
     flag: 'item-method',
     url: 'https://github.com/tc39/proposal-item-method',
+  },
+  {
+    name: 'REPL parsing goal',
+    flag: 'repl-parse-goal',
+    url: 'https://github.com/bmeck/js-repl-goal',
   },
 ].map(Object.freeze));
 
@@ -245,6 +256,76 @@ export function ScriptEvaluation(scriptRecord) {
   // Resume(surroundingAgent.runningExecutionContext);
 
   return result;
+}
+
+// (*ReplParseGoal) #sec-repl-input-evaluation
+export function REPLInputEvaluation(replInputRecord) {
+  // 1. Let replEnv be replInputRecord.[[Environment]].
+  const replEnv = replInputRecord.Environment;
+  // 2. Assert: replEnv is a REPL Environment Record.
+  Assert(replEnv instanceof REPLEnvironmentRecord);
+
+  // 3. Let replInputContext be a new ECMAScript code execution context.
+  const replInputContext = new ExecutionContext();
+  // 4. Set the Function of replInputContext to null.
+  replInputContext.Function = Value.null;
+  // 5. Set the Realm of replInputContext to replInputRecord.[[Realm]].
+  replInputContext.Realm = replInputRecord.Realm;
+  // 6. Set the ScriptOrModule of replInputContext to replInputRecord.
+  replInputContext.ScriptOrModule = replInputRecord;
+  // 7. Set the VariableEnvironment of replInputContext to replEnv.
+  replInputContext.VariableEnvironment = replEnv;
+  // 8. Set the LexicalEnvironment of replInputContext to replEnv.
+  replInputContext.LexicalEnvironment = replEnv;
+  replInputContext.HostDefined = replInputRecord.HostDefined;
+  // 9. Suspend the currently running execution context.
+  // 10. Push replInputContext onto the execution context stack; replInputContext is now the running execution context.
+  surroundingAgent.executionContextStack.push(replInputContext);
+  // 11. Let replInputBody be replInputRecord.[[ECMAScriptCode]].
+  const replInputBody = replInputRecord.ECMAScriptCode;
+
+  // 12. Perform ! BlockDeclarationInstantiation(replInputBody, replEnv).
+  X(BlockDeclarationInstantiation(replInputBody, replEnv));
+  // 13. If replInputRecord.[[HasTopLevelAwait]] is true, then
+  if (replInputRecord.HasTopLevelAwait === Value.true) {
+    // a. Let promiseCapability be ! NewPromiseCapability(%Promise%).
+    const promiseCapability = X(NewPromiseCapability(replInputContext.Realm.Intrinsics['%Promise%']));
+
+    // b. Let asyncContext be a copy of replInputContext.
+    const asyncContext = replInputContext.copy();
+
+    // c. Perform ! AsyncBlockStart(promiseCapability, replInputBody, asyncContext).
+    X(AsyncBlockStart(promiseCapability, replInputBody, asyncContext));
+
+    // d. Suspend replInputContext and remove it from the execution context stack.
+    surroundingAgent.executionContextStack.pop(replInputContext);
+
+    // e. Assert: The execution context stack is not empty.
+    // f. Resume the context that is now on the top of the execution context stack as the running execution context.
+    // Resume(surroundingAgent.runningExecutionContext);
+
+    // g. Return promiseCapability.
+    return promiseCapability;
+  } else { // 14. Else,
+    // a. Let result be the result of evaluating replInputBody.
+    let result = EnsureCompletion(unwind(Evaluate(replInputBody)));
+
+    // b. If result.[[Type]] is normal and result.[[Value]] is empty, then
+    if (result.Type === 'normal' && !result.Value) {
+      // i. Set result to NormalCompletion(undefined).
+      result = NormalCompletion(Value.undefined);
+    }
+
+    // c. Suspend replInputContext and remove it from the execution context stack.
+    surroundingAgent.executionContextStack.pop(replInputContext);
+
+    // d. Assert: The execution context stack is not empty.
+    // e. Resume the context that is now on the top of the execution context stack as the running execution context.
+    // Resume(surroundingAgent.runningExecutionContext);
+
+    // f. Return Completion(result).
+    return result;
+  }
 }
 
 // #sec-hostenqueuepromisejob

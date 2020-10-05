@@ -18,6 +18,11 @@ export function AsyncBlockStart(promiseCapability, asyncBody, asyncContext) {
     // Assert: If we return here, the async function either threw an exception or performed an implicit or explicit return; all awaiting is done.
     surroundingAgent.executionContextStack.pop(asyncContext);
     if (result.Type === 'normal') {
+      // (*ReplParseGoal) i. If asyncBody is a REPLInput, then
+      if (surroundingAgent.feature('repl-parse-goal') && asyncBody.type === 'REPLInput') {
+        // (*ReplParseGoal) 1. Perform ! Call(promiseCapability.[[Resolve]], undefined, « result.[[Value]] »).
+        X(Call(promiseCapability.Resolve, Value.undefined, [result.Value]));
+      }
       X(Call(promiseCapability.Resolve, Value.undefined, [Value.undefined]));
     } else if (result.Type === 'return') {
       X(Call(promiseCapability.Resolve, Value.undefined, [result.Value]));

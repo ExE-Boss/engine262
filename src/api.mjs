@@ -3,6 +3,7 @@ import {
   surroundingAgent,
   ExecutionContext,
   HostEnqueueFinalizationRegistryCleanupJob,
+  REPLInputEvaluation,
   ScriptEvaluation,
 } from './engine.mjs';
 import {
@@ -21,6 +22,7 @@ import {
 import {
   ParseScript,
   ParseModule,
+  ParseREPLInput,
 } from './parse.mjs';
 import { SourceTextModuleRecord } from './modules.mjs';
 
@@ -174,6 +176,16 @@ export function runJobQueue() {
   }
 }
 
+export function evaluateREPLInput(sourceText, realm, REPLEnvironment, hostDefined) {
+  const replRecord = ParseREPLInput(sourceText, realm, hostDefined);
+  if (Array.isArray(replRecord)) {
+    return ThrowCompletion(replRecord[0]);
+  }
+
+  replRecord.Environment = REPLEnvironment;
+  return REPLInputEvaluation(replRecord);
+}
+
 export function evaluateScript(sourceText, realm, hostDefined) {
   const s = ParseScript(sourceText, realm, hostDefined);
   if (Array.isArray(s)) {
@@ -218,6 +230,26 @@ export class ManagedRealm extends Realm {
     surroundingAgent.executionContextStack.pop(this.topContext);
     this.active = false;
     return r;
+  }
+
+  evaluateREPLInput(sourceText, REPLEnvironment, { specifier } = {}) {
+    if (typeof sourceText !== 'string') {
+      throw new TypeError('sourceText must be a string');
+    }
+
+    const res = this.scope(() => {
+      const realm = surroundingAgent.currentRealmRecord;
+      return evaluateREPLInput(sourceText, realm, REPLEnvironment, {
+        specifier,
+        public: { specifier },
+      });
+    });
+
+    if (!(res instanceof AbruptCompletion)) {
+      runJobQueue();
+    }
+
+    return res;
   }
 
   evaluateScript(sourceText, { specifier } = {}) {

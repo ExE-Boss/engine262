@@ -3,7 +3,7 @@ import { RegExpParser } from './parser/RegExpParser.mjs';
 import { surroundingAgent } from './engine.mjs';
 import { SourceTextModuleRecord } from './modules.mjs';
 import { Value } from './value.mjs';
-import { Get, Set } from './abstract-ops/all.mjs';
+import { Assert, Get, Set } from './abstract-ops/all.mjs';
 import { X } from './completion.mjs';
 import {
   ModuleRequests,
@@ -12,6 +12,7 @@ import {
   ImportedLocalNames,
 } from './static-semantics/all.mjs';
 import { ValueSet, kInternal } from './helpers.mjs';
+import { REPLEnvironmentRecord } from './api.mjs';
 
 function handleError(e) {
   if (e.name === 'SyntaxError') {
@@ -40,6 +41,40 @@ export function wrappedParse(init, f) {
   } catch (e) {
     return [handleError(e)];
   }
+}
+
+export function ParseREPLInput(sourceText, realm, hostDefined = {}) {
+  Assert(surroundingAgent.feature('repl-parse-goal'));
+  // 1. Assert: sourceText is an ECMAScript source text (see clause 10).
+  // 2. Parse sourceText using REPLInput as the goal symbol and analyse the parse result for
+  //    any Early Error conditions. If the parse was successful and no early errors were found,
+  //    let body be the resulting parse tree. Otherwise, let body be a List of one or more
+  //    SyntaxError objects representing the parsing errors and/or early errors. Parsing and
+  //    early error detection may be interweaved in an implementation-dependent manner. If more
+  //    than one parsing error or early error is present, the number and ordering of error
+  //    objects in the list is implementation-dependent, but at least one must be present.
+  const body = wrappedParse(
+    { source: sourceText, specifier: hostDefined.specifier },
+    (p) => p.parseREPLInput(),
+  );
+  // 3. If body is a List of errors, return body.
+  if (Array.isArray(body)) {
+    return body;
+  }
+  // 4. Let hasTopLevelAwait be body Contains await.
+  // 5. Return REPL Input Record { [[Realm]]: realm, [[Environment]]: undefined, [[ECMAScriptCode]]: body,
+  //    [[HasTopLevelAwait]]: hasTopLevelAwait, [[HostDefined]]: hostDefined }.
+  return {
+    Realm: realm,
+    Environment: Value.undefined,
+    ECMAScriptCode: body,
+    HostDefined: hostDefined,
+    HasTopLevelAwait: body.hasTopLevelAwait ? Value.true : Value.false,
+    mark(m) {
+      m(this.Realm);
+      m(this.Environment);
+    },
+  };
 }
 
 export function ParseScript(sourceText, realm, hostDefined = {}) {

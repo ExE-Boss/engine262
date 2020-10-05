@@ -19,6 +19,10 @@ const snekparse = require('./snekparse');
 const {
   Agent,
   setSurroundingAgent,
+  runJobQueue,
+
+  PromiseCapabilityRecord,
+  REPLEnvironmentRecord,
 
   FEATURES,
   inspect,
@@ -192,6 +196,10 @@ if (entry) {
     oneShotEval(source, process.cwd());
   });
 } else {
+  const replEnvironment = agent.feature('repl-parse-goal')
+    ? new REPLEnvironmentRecord(realm.GlobalEnv)
+    : null;
+
   process.stdout.write(`${packageJson.name} v${packageJson.version}
 Please report bugs to ${packageJson.bugs.url}
 `);
@@ -199,8 +207,20 @@ Please report bugs to ${packageJson.bugs.url}
     prompt: '> ',
     eval: (cmd, context, filename, callback) => {
       try {
-        const result = realm.evaluateScript(cmd, { specifier: '(engine262)' });
-        callback(null, result);
+        const options = { specifier: '(engine262)' };
+        const result = replEnvironment
+          ? realm.evaluateREPLInput(cmd, replEnvironment, options)
+          : realm.evaluateScript(cmd, options);
+
+        if (result instanceof PromiseCapabilityRecord) {
+          const p = result.Promise;
+          while (p.PromiseState === 'pending') {
+            runJobQueue();
+          }
+          callback(null, p.PromiseResult);
+        } else {
+          callback(null, result);
+        }
       } catch (e) {
         callback(e, null);
       }

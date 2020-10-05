@@ -25,6 +25,8 @@ export function LexicallyScopedDeclarations(node) {
       return [];
     case 'ModuleBody':
       return LexicallyScopedDeclarations(node.ModuleItemList);
+    case 'REPLInput':
+      return LexicallyScopedDeclarations(node.Script);
     case 'FunctionBody':
     case 'GeneratorBody':
     case 'AsyncFunctionBody':

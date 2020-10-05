@@ -5,6 +5,7 @@ import {
   Evaluate_ScriptBody,
   Evaluate_Module,
   Evaluate_ModuleBody,
+  Evaluate_REPLInput,
   Evaluate_ImportDeclaration,
   Evaluate_ExportDeclaration,
   Evaluate_ClassDeclaration,
@@ -90,6 +91,8 @@ export function* Evaluate(node) {
       return yield* Evaluate_Module(node);
     case 'ModuleBody':
       return yield* Evaluate_ModuleBody(node);
+    case 'REPLInput':
+      return yield* Evaluate_REPLInput(node);
     // Statements
     case 'Block':
       return yield* Evaluate_Block(node);
