@@ -6,7 +6,7 @@ const { babel } = require('@rollup/plugin-babel');
 const commonjs = require('@rollup/plugin-commonjs');
 const json = require('@rollup/plugin-json');
 const { nodeResolve } = require('@rollup/plugin-node-resolve');
-const { name, version } = require('./package.json');
+const { version } = require('./package.json');
 
 const hash = execSync('git rev-parse HEAD', { encoding: 'utf8' }).trim();
 
@@ -37,7 +37,7 @@ module.exports = () => ({
       file: 'dist/engine262.js',
       format: 'umd',
       sourcemap: true,
-      name,
+      name: 'engine262',
       banner,
     },
     {
