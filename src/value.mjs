@@ -42,7 +42,12 @@ export class Value {
   }
 }
 
-export class PrimitiveValue extends Value {}
+export class PrimitiveValue extends Value {
+  constructor() {
+    Assert(new.target !== PrimitiveValue);
+    super();
+  }
+}
 
 // #sec-ecmascript-language-types-undefined-type
 export class UndefinedValue extends PrimitiveValue {}
