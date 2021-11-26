@@ -17,9 +17,7 @@ function convertValueForKey(key) {
 }
 
 export class ValueMap {
-  constructor() {
-    this.map = new Map();
-  }
+  map = new Map();
 
   get size() {
     return this.map.size;
@@ -77,8 +75,9 @@ export class ValueMap {
 }
 
 export class ValueSet {
+  set = new Set();
+
   constructor(init) {
-    this.set = new Set();
     if (init !== undefined && init !== null) {
       for (const item of init) {
         this.add(item);
@@ -125,6 +124,8 @@ export class ValueSet {
 }
 
 export class OutOfRange extends RangeError {
+  detail;
+
   /* c8 ignore next */
   constructor(fn, detail) {
     super(`${fn}() argument out of range`);
@@ -164,12 +165,14 @@ export function resume(context, completion) {
 }
 
 export class CallSite {
+  context;
+  lastNode = null;
+  lastCallNode = null;
+  inheritedLastCallNode = null;
+  constructCall = false;
+
   constructor(context) {
     this.context = context;
-    this.lastNode = null;
-    this.lastCallNode = null;
-    this.inheritedLastCallNode = null;
-    this.constructCall = false;
   }
 
   clone(context = this.context) {

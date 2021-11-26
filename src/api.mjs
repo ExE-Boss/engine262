@@ -185,13 +185,17 @@ export function evaluateScript(sourceText, realm, hostDefined) {
 }
 
 export class ManagedRealm extends Realm {
+  GlobalObject = Value.undefined;
+  GlobalEnv = Value.undefined;
+  TemplateMap = [];
+  HostDefined;
+  topContext;
+  active = false;
+
   constructor(HostDefined = {}) {
     super();
     // CreateRealm()
     CreateIntrinsics(this);
-    this.GlobalObject = Value.undefined;
-    this.GlobalEnv = Value.undefined;
-    this.TemplateMap = [];
 
     // InitializeHostDefinedRealm()
     const newContext = new ExecutionContext();
@@ -206,7 +210,6 @@ export class ManagedRealm extends Realm {
     surroundingAgent.executionContextStack.pop(newContext);
     this.HostDefined = HostDefined;
     this.topContext = newContext;
-    this.active = false;
   }
 
   scope(cb) {

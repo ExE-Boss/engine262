@@ -32,6 +32,9 @@ import { Evaluate } from './evaluator.mjs';
 
 // #resolvedbinding-record
 export class ResolvedBindingRecord {
+  Module;
+  BindingName;
+
   constructor({ Module, BindingName }) {
     Assert(Module instanceof AbstractModuleRecord);
     Assert(BindingName === 'namespace' || Type(BindingName) === 'String');
@@ -46,6 +49,11 @@ export class ResolvedBindingRecord {
 
 // 15.2.1.15 #sec-abstract-module-records
 export class AbstractModuleRecord {
+  Realm;
+  Environment;
+  Namespace;
+  HostDefined;
+
   constructor({
     Realm,
     Environment,
@@ -67,6 +75,17 @@ export class AbstractModuleRecord {
 
 // 15.2.1.16 #sec-cyclic-module-records
 export class CyclicModuleRecord extends AbstractModuleRecord {
+  Status;
+  EvaluationError;
+  DFSIndex;
+  DFSAncestorIndex;
+  RequestedModules;
+  Async;
+  AsyncEvaluating;
+  TopLevelCapability;
+  AsyncParentModules;
+  PendingAsyncDependencies;
+
   constructor(init) {
     super(init);
     this.Status = init.Status;
@@ -183,6 +202,14 @@ export class CyclicModuleRecord extends AbstractModuleRecord {
 
 // 15.2.1.17 #sec-source-text-module-records
 export class SourceTextModuleRecord extends CyclicModuleRecord {
+  ImportMeta;
+  ECMAScriptCode;
+  Context;
+  ImportEntries;
+  LocalExportEntries;
+  IndirectExportEntries;
+  StarExportEntries;
+
   constructor(init) {
     super(init);
 
@@ -522,6 +549,9 @@ export class SourceTextModuleRecord extends CyclicModuleRecord {
 
 // #sec-synthetic-module-records
 export class SyntheticModuleRecord extends AbstractModuleRecord {
+  ExportNames;
+  EvaluationSteps;
+
   constructor(init) {
     super(init);
 

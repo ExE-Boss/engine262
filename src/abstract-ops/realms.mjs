@@ -88,15 +88,14 @@ import {
 
 // 8.2 #sec-code-realms
 export class Realm {
-  constructor() {
-    this.Intrinsics = undefined;
-    this.GlobalObject = undefined;
-    this.GlobalEnv = undefined;
-    this.TemplateMap = undefined;
-    this.HostDefined = undefined;
+  Intrinsics;
+  GlobalObject;
+  GlobalEnv;
+  TemplateMap;
+  HostDefined;
 
-    this.randomState = undefined;
-  }
+  // NON-SPEC
+  randomState;
 
   mark(m) {
     m(this.GlobalObject);

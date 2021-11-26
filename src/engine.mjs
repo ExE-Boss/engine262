@@ -77,6 +77,17 @@ class ExecutionContextStack extends Array {
 let agentSignifier = 0;
 // #sec-agents
 export class Agent {
+  // #table-agent-record
+  AgentRecord;
+
+  // #execution-context-stack
+  executionContextStack = new ExecutionContextStack();
+
+  // NON-SPEC
+  jobQueue = [];
+  scheduledForCleanup = new Set();
+  hostDefinedOptions;
+
   constructor(options = {}) {
     // #table-agent-record
     const Signifier = agentSignifier;
@@ -91,12 +102,7 @@ export class Agent {
       KeptAlive: new Set(),
     };
 
-    // #execution-context-stack
-    this.executionContextStack = new ExecutionContextStack();
-
     // NON-SPEC
-    this.jobQueue = [];
-    this.scheduledForCleanup = new Set();
     this.hostDefinedOptions = {
       ...options,
       features: FEATURES.reduce((acc, { flag }) => {
@@ -189,20 +195,18 @@ export function setSurroundingAgent(a) {
 
 // #sec-execution-contexts
 export class ExecutionContext {
-  constructor() {
-    this.codeEvaluationState = undefined;
-    this.Function = undefined;
-    this.Realm = undefined;
-    this.ScriptOrModule = undefined;
-    this.VariableEnvironment = undefined;
-    this.LexicalEnvironment = undefined;
-    this.PrivateEnvironment = undefined;
+  codeEvaluationState;
+  Function;
+  Realm;
+  ScriptOrModule;
+  VariableEnvironment;
+  LexicalEnvironment;
+  PrivateEnvironment;
 
-    // NON-SPEC
-    this.callSite = new CallSite(this);
-    this.promiseCapability = undefined;
-    this.poppedForTailCall = false;
-  }
+  // NON-SPEC
+  callSite = new CallSite(this);
+  promiseCapability;
+  poppedForTailCall = false;
 
   copy() {
     const e = new ExecutionContext();

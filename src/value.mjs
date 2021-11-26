@@ -42,6 +42,11 @@ export class Value {
         throw new OutOfRange('new Value', value);
     }
   }
+
+  static undefined;
+  static null;
+  static true;
+  static false;
 }
 
 export class PrimitiveValue extends Value {}
@@ -54,6 +59,8 @@ export class NullValue extends PrimitiveValue {}
 
 // #sec-ecmascript-language-types-boolean-type
 export class BooleanValue extends PrimitiveValue {
+  boolean;
+
   constructor(v) {
     super();
     this.boolean = v;
@@ -77,6 +84,8 @@ Object.defineProperties(Value, {
 
 // #sec-ecmascript-language-types-string-type
 class StringValue extends PrimitiveValue {
+  string;
+
   constructor(string) {
     super();
     this.string = string;
@@ -91,6 +100,8 @@ export { StringValue as JSStringValue };
 
 // #sec-ecmascript-language-types-symbol-type
 export class SymbolValue extends PrimitiveValue {
+  Description;
+
   constructor(Description) {
     super();
     this.Description = Description;
@@ -120,6 +131,8 @@ Object.freeze(wellKnownSymbols);
 
 // #sec-ecmascript-language-types-number-type
 export class NumberValue extends PrimitiveValue {
+  number;
+
   constructor(number) {
     super();
     this.number = number;
@@ -352,9 +365,9 @@ export class NumberValue extends PrimitiveValue {
     // TODO: implement properly
     return new Value(`${xVal}`);
   }
-}
 
-NumberValue.unit = new NumberValue(1);
+  static unit = new NumberValue(1);
+}
 
 // #sec-numberbitwiseop
 function NumberBitwiseOp(op, x, y) {
@@ -377,6 +390,8 @@ function NumberBitwiseOp(op, x, y) {
 
 // #sec-ecmascript-language-types-bigint-type
 export class BigIntValue extends PrimitiveValue {
+  bigint;
+
   constructor(bigint) {
     super();
     this.bigint = bigint;
@@ -534,9 +549,9 @@ export class BigIntValue extends PrimitiveValue {
     // 2. Return the String value consisting of the code units of the digits of the decimal representation of x.
     return new Value(`${x.bigintValue()}`);
   }
-}
 
-BigIntValue.unit = new BigIntValue(1n);
+  static unit = new BigIntValue(1n);
+}
 
 /*
 // #sec-binaryand
@@ -658,21 +673,22 @@ function BigIntBitwiseOp(op, x, y) {
 
 // #sec-private-names
 export class PrivateName extends Value {
+  Description;
+
   constructor(Description) {
     super();
-
     this.Description = Description;
   }
 }
 
 // #sec-object-type
 export class ObjectValue extends Value {
+  PrivateElements = [];
+  properties = new ValueMap();
+  internalSlotsList;
+
   constructor(internalSlotsList) {
     super();
-
-    this.PrivateElements = [];
-
-    this.properties = new ValueMap();
     this.internalSlotsList = internalSlotsList;
   }
 
@@ -730,6 +746,11 @@ export class ObjectValue extends Value {
 }
 
 export class ReferenceRecord {
+  Base;
+  ReferencedName;
+  Strict;
+  ThisValue;
+
   constructor({
     Base,
     ReferencedName,
